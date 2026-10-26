@@ -1,0 +1,40 @@
+---
+- hosts: webservers
+  gather_facts: false
+
+  tasks:
+    - name: Install packages latest version (RedHat / Amazon Linux)
+      yum:
+        name: "{{ item }}"
+        state: latest
+        use_backend: dnf4  # Explicitly specify to prevent backend detection crashes
+      with_items:
+        - httpd
+        - nginx
+        - vsftpd
+      when: ansible_os_family == "RedHat"
+      notify: restart_web_services
+
+    - name: Install packages latest version (Debian / Ubuntu)
+      apt:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - apache2
+        - nginx
+        - vsftpd
+      when: ansible_os_family == "Debian"
+      notify: restart_web_services
+
+  handlers:
+    - name: restart_web_services
+      become: true
+      service:
+        name: "{{ item }}"
+        state: restarted
+      with_items:
+        - nginx
+        - httpd
+        - apache2
+      listen: "restart_web_services"
+      failed_when: false  # Ignores if a specific service isn't installed on that OS variant
