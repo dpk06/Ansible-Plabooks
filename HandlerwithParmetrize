@@ -1,0 +1,23 @@
+---
+- hosts: webservers
+  gather_facts: false
+
+  tasks:
+    - name: Install packages latest version
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - httpd
+        - nginx
+      become: true
+      notify:
+        - name: restart service dynamic
+          service_to_restart: "{{ item }}"  # Pass the current loop item as a variable
+
+  handlers:
+    - name: restart service dynamic
+      become: true
+      service:
+        name: "{{ service_to_restart }}"     # Receives the variable passed from notify
+        state: restarted
